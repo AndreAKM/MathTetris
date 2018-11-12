@@ -92,30 +92,29 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     Rect bestCountBorderRect;
     Rect fullScreanRect;
 
+    Field field;
     /**
      * check should draw the game field
      * @return true if the field should be re drown
      */
-    boolean isDrawing() { return drawing||main.engine.isCange();}
+    boolean isDrawing() { return drawing||main.engine.isChanged();}
 
     @Override
     protected void onDraw(Canvas canvas) {
         // super.onDraw(canvas);
         if(mooving||isDrawing()){
-            backgroundDraw(canvas);
+            field = main.engine.read();
+            synchronized (field) {
+                backgroundDraw(canvas);
+                if (isDrawing()) {
+                    fieldDrowing(canvas, -1, -1);
+                    counter.counting();
+                    drawing = false;
+                }
+            }
         }
-        if(mooving) {
-            int x= idFieldX(initX);
-            int y = idFieldY(initY);
 
-            fieldDrowing(canvas, x, y);
-            moveDrowing(canvas);
-        }
-        if (isDrawing()) {
-            fieldDrowing(canvas, -1, -1);
-            counter.counting();
-            drawing = false;
-        }
+
     }
     Counter counter = null; //!< counter instance
 
@@ -167,30 +166,36 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     /**
      * Draw some hints for user
      * @param canvas - canvas
-     */
+
     void targetWinerDraw(Canvas canvas) {
         if(main.engine.isDone() == false) return;
         int centr = screanW / 2;
         targetBorderRect.left = centr - step / 2;
         targetBorderRect.right = centr + step / 2;
         //canvas.drawBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.golden_cup),null , targetBorderRect, new Paint());
-    }
+    }*/
 
     void targetDraw(Canvas canvas, Paint textPaint) {
-        if(main.engine.isFinish() == true) {
+        /*if(main.engine.isFinish() == true) {
             targetWinerDraw(canvas);
             return;
-        }
-        int widhtTarget = main.engine.getTargetSequentSize() * (step + shiftX) - shiftX;
+        }*/
+        int widhtTarget = field.getTasks().size() * step;
         int y = targetBorderRect.top + shiftY;
         paint.setStyle(Paint.Style.FILL);
         int centr = screanW / 2;
         int start = centr - widhtTarget / 2;
-        for (int x = start, count = 0; count < main.engine.getTargetSequentSize(); x += step + shiftX, ++count) {
-            int color = main.engine.getTargetColor();
-            if (color == main.engine.getDefaultColor()) return;
+        for (int x = start, count = 0; count < field.getTasks().size(); x += step + shiftX, ++count) {
+            Field.Data d = field.getTasks().get(count);
+            int color = d.color;
+            //if (color == main.engine.getDefaultColor()) return;
             paint.setColor(color);
-            canvas.drawRoundRect(new RectF(x, y, x + step, y + step), cornrad, cornrad, paint);
+            RectF rec = new RectF(x, y, x + step, y + step);
+            canvas.drawRoundRect(rec, cornrad, cornrad, paint);
+            paint.setColor(Color.BLACK);
+            canvas.drawText(String.valueOf(d.value),
+                    startOftext(bestCountBorderRect, counter.getBestResult().toString(), highttext /2),
+                    bestCountBorderRect.bottom - shiftY, shadowPaint);
         }
     }
 
@@ -248,26 +253,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     /**
      * swap first and last touched blocs
      */
-    void swap() {
-        int x1= idFieldX(initX);
-        int y1 = idFieldY(initY);
-        int x2 = idFieldX(endX);
-        int y2 = idFieldY(endY);
-        float changeX = Math.abs(endX - initX);
-        float changeY = Math.abs(endY - initY);
-        if(changeX > changeY) {
-            if (x2 < x1) x2 = x1 - 1;
-            if (x2 > x1) x2 = x1 + 1;
-            y2 = y1;
-        } else if(changeX < changeY) {
-            if (y2 < y1) y2 = y1 - 1;
-            if (y2 > y1) y2 = y1 + 1;
-            x2 = x1;
-        }
-        else {
-            return;
-        }
-        main.engine.swap(x1, y1, x2, y2);
+    void choose() {
+        int x= idFieldX(initX);
+        int y = idFieldY(initY);
+        main.engine.choose(x, y);
     }
 
     @Override
@@ -281,21 +270,13 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             drawing = true;
             return true;
         }
-        if (action == MotionEvent.ACTION_MOVE) {
-            endX = x;
-            endY = y;
-            if(Math.abs(endX - initX) > 2 *step || Math.abs(endY - initY) > 2 *step) {
-                mooving = false;
-                drawing = true;
-                swap();
-            } else mooving = true;
-        } else if (action == MotionEvent.ACTION_DOWN) {
+        if (action == MotionEvent.ACTION_DOWN) {
             initX = x;
             initY = y;
         } else if (action == MotionEvent.ACTION_UP) {
             mooving = false;
             drawing = true;
-            swap();
+            choose();
         }
 
         return true;

@@ -17,7 +17,6 @@ public class GameThread extends Thread {
     private SurfaceHolder myThreadSurfaceHolder;
     private GameView myThreadSurfaceView;
     private boolean myThreadRun = false;
-
     /**
      * constructor
      * @param surfaceHolder reference to surface holder
