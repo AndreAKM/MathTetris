@@ -84,6 +84,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private boolean drawing = true;
     public boolean mooving = false;
     private Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint number_pain = new Paint(Paint.ANTI_ALIAS_FLAG);
     Bitmap border;
     Bitmap background;
     Rect gameFieldborderRect;
@@ -192,33 +193,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             paint.setColor(color);
             RectF rec = new RectF(x, y, x + step, y + step);
             canvas.drawRoundRect(rec, cornrad, cornrad, paint);
-            paint.setColor(Color.BLACK);
-            canvas.drawText(String.valueOf(d.value),
-                    startOftext(bestCountBorderRect, counter.getBestResult().toString(), highttext /2),
-                    bestCountBorderRect.bottom - shiftY, shadowPaint);
+            canvas.drawText(String.valueOf(d.value),x+step/2,
+                    y + step, number_pain);
         }
     }
 
     int cornrad = 10;
-    /**
-     * draw flying block which follows to user finger
-     * @param canvas - canvas
-     */
-    void moveDrowing(Canvas canvas) {
-        int x= idFieldX(initX);
-        int y = idFieldY(initY);
-        //paint.setStyle(Paint.Style.FILL);
-        //paint.setColor(main.engine.getDefaultColor());
-        //float xx = shiftX + gameFieldborderRect.left + x*step;
-        //float yy = shiftY + gameFieldborderRect.top + y*step;
-        //canvas.drawRoundRect(new RectF(xx, yy, xx + step, yy + step), cornrad, cornrad, paint);
-        float x1 = endX - (step/2);
-        float y1 = endY - (step/2);
-        paint.setStyle(Paint.Style.FILL);
-        paint.setColor(main.engine.getColor(x , y));
-        canvas.drawRoundRect(new RectF(x1, y1, x1 + step, y1 + step), cornrad, cornrad, paint);
-
-    }
 
     /**
      * draw game field
@@ -226,17 +206,19 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
      */
     void fieldDrowing(Canvas canvas, int missx, int missy) {
         
-        main.engine.startReading();
         paint.setStyle(Paint.Style.FILL);
         for (int y = gameFieldborderRect.top + shiftY; y < gameFieldborderRect.top + radius; y += step){
             for (int x = gameFieldborderRect.left + shiftX; x < gameFieldborderRect.left + radius; x += step){
-                int color = main.engine.getColor(idFieldX(x), idFieldY(y));
-                if(color == main.engine.getDefaultColor() || (idFieldX(x) == missx && idFieldY(y) == missy)) continue;
+                Field.Data d = field.data(new Field.Coordinate(idFieldX(x), idFieldY(y)));
+                int color = d.color;
+                //if(color == main.engine.getDefaultColor() || (idFieldX(x) == missx && idFieldY(y) == missy)) continue;
                 paint.setColor(color);
                 canvas.drawRoundRect(new RectF(x, y, x + step, y + step), cornrad, cornrad, paint);
+                canvas.drawText(String.valueOf(d.value),
+                        x + step / 2,
+                        y + step, number_pain);
             }
         }
-        main.engine.endReading();
     }
 
     /**
@@ -291,6 +273,14 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(3);
         paint.setColor(Color.WHITE);
+
+        number_pain.setAntiAlias(true);
+        number_pain.setTextSize(highttext);
+        number_pain.setStrokeWidth(highttext/10);
+        number_pain.setStyle(Paint.Style.STROKE);
+        number_pain.setShadowLayer(step, 10.0f, 10.0f, Color.BLACK);
+        number_pain.setColor(Color.BLACK);
+
     }
 
     @Override
